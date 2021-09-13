@@ -10,6 +10,19 @@ var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promoRouter = require('./routes/promoRouter');
 
+const mongoose = require('mongoose');
+
+const Dishes = require('./models/dishes');
+
+const url = require('./config');
+const connect = mongoose.connect(url);
+
+connect
+	.then((db) => {
+		console.log('Connect correctly to server');
+	})
+	.catch((err) => console.log(err));
+
 var app = express();
 
 // view engine setup
