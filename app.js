@@ -31,35 +31,50 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+// setting secret key for cookies
+app.use(cookieParser('12345-67890-54321'));
 
 const auth = (req, res, next) => {
-	console.log(req.headers);
+	// check if the request didn't include a cookie with a value of user
+	if (!req.signedCookies.user) {
+		var authHeader = req.headers.authorization;
+		// if the authroziation header is not present, ask the user to signin before proceeding
+		if (!authHeader) {
+			var err = new Error('You are not authenticated!');
+			res.setHeader('WWW-Authenticate', 'Basic');
+			err.status = 401;
+			next(err);
+			return;
+		}
+		// get the authorization header and decrypt it
+		var auth = Buffer.from(authHeader.split(' ')[1], 'base64')
+			.toString()
+			.split(':');
 
-	var authHeader = req.headers.authorization;
+		var username = auth[0];
+		var password = auth[1];
 
-	if (!authHeader) {
-		var err = new Error('You are not authenticated!');
-		res.setHeader('WWW-Authenticate', 'Basic');
-		err.status = 401;
-		next(err);
-		return;
+		if (username === 'admin' && password === 'password') {
+			// set cookie
+			res.cookie('user', 'admin', { signed: true });
+			next();
+		} else {
+			// ask user to authenticate
+			var err = new Error('You are not authenticated!');
+			res.setHeader('WWW-Authenticate', 'Basic');
+			err.status = 401;
+			next(err);
+		}
 	}
-
-	var auth = Buffer.from(authHeader.split(' ')[1], 'base64')
-		.toString()
-		.split(':');
-
-	var username = auth[0];
-	var password = auth[1];
-
-	if (username === 'admin' && password === 'password') {
-		next();
-	} else {
-		var err = new Error('You are not authenticated!');
-		res.setHeader('WWW-Authenticate', 'Basic');
-		err.status = 401;
-		next(err);
+	// if there's a cookie check if it has a valid username, if not, ask to authenticate
+	else {
+		if (req.signedCookies.user === 'admin') {
+			next();
+		} else {
+			var err = new Error('You are not authenticated!');
+			err.status = 401;
+			next(err);
+		}
 	}
 };
 
