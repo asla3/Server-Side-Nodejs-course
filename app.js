@@ -44,46 +44,25 @@ app.use(
 	})
 );
 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 const auth = (req, res, next) => {
 	// check if the request didn't include a session with a value of user
 	if (!req.session.user) {
-		var authHeader = req.headers.authorization;
-		// if the authroziation header is not present, ask the user to signin before proceeding
-		if (!authHeader) {
-			var err = new Error('You are not authenticated!');
-			res.setHeader('WWW-Authenticate', 'Basic');
-			err.status = 401;
-			next(err);
-			return;
-		}
-		// get the authorization header and decrypt it
-		var auth = Buffer.from(authHeader.split(' ')[1], 'base64')
-			.toString()
-			.split(':');
-
-		var username = auth[0];
-		var password = auth[1];
-
-		if (username === 'admin' && password === 'password') {
-			// create the session
-			req.session.user = 'admin';
-			next();
-		} else {
-			// ask user to authenticate
-			var err = new Error('You are not authenticated!');
-			res.setHeader('WWW-Authenticate', 'Basic');
-			err.status = 401;
-			next(err);
-		}
+		var err = new Error('You are not authenticated!');
+		err.status = 403;
+		return next(err);
 	}
+
 	// if there's a session check if it has a valid username, if not, ask to authenticate
 	else {
-		if (req.session.user === 'admin') {
+		if (req.session.user === 'authenticated') {
 			next();
 		} else {
 			var err = new Error('You are not authenticated!');
-			err.status = 401;
-			next(err);
+			err.status = 403;
+			return next(err);
 		}
 	}
 };
@@ -92,8 +71,6 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/leaders', leaderRouter);
 app.use('/promotions', promoRouter);
