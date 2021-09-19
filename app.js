@@ -3,6 +3,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+require('buffer');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -45,7 +46,7 @@ const auth = (req, res, next) => {
 		return;
 	}
 
-	var auth = new Buffer(authHeader.split(' ')[1], 'base64')
+	var auth = Buffer.from(authHeader.split(' ')[1], 'base64')
 		.toString()
 		.split(':');
 
