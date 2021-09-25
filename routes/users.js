@@ -3,6 +3,7 @@ var User = require('../models/user');
 var router = express.Router();
 router.use(express.json());
 var passport = require('passport');
+var authenticate = require('../authenticate');
 
 router.get('/', function (req, res, next) {
 	res.send('respond with a resource');
@@ -15,10 +16,9 @@ router.post('/signup', (req, res, next) => {
 		(err, user) => {
 			// if there's an user with that username already registered, throw an error
 			if (err) {
-				var err = new Error('User ' + req.body.username + ' already exists!');
-				err.status = 503;
+				res.statusCode = 500;
 				res.setHeader('Content-Type', 'application/json');
-
+				console.log(err);
 				res.json({ err: err });
 			}
 			// if not, create it
@@ -37,9 +37,14 @@ router.post(
 	'/login',
 	passport.authenticate('local'),
 	function (req, res, next) {
+		var token = authenticate.getToken({ _id: req.user._id });
 		res.statusCode = 200;
 		res.setHeader('Content-Type', 'application/json');
-		res.json({ success: true, status: 'You have successfully logged in!' });
+		res.json({
+			success: true,
+			token: token,
+			status: 'Registration Successful!',
+		});
 	}
 );
 
