@@ -6,6 +6,8 @@ var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 require('buffer');
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -44,12 +46,15 @@ app.use(
 	})
 );
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 const auth = (req, res, next) => {
 	// check if the request didn't include a session with a value of user
-	if (!req.session.user) {
+	if (!req.user) {
 		var err = new Error('You are not authenticated!');
 		err.status = 403;
 		return next(err);
@@ -57,13 +62,7 @@ const auth = (req, res, next) => {
 
 	// if there's a session check if it has a valid username, if not, ask to authenticate
 	else {
-		if (req.session.user === 'authenticated') {
-			next();
-		} else {
-			var err = new Error('You are not authenticated!');
-			err.status = 403;
-			return next(err);
-		}
+		next();
 	}
 };
 
