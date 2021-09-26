@@ -14,19 +14,34 @@ router.post('/signup', (req, res, next) => {
 		new User({ username: req.body.username }),
 		req.body.password,
 		(err, user) => {
-			// if there's an user with that username already registered, throw an error
 			if (err) {
 				res.statusCode = 500;
 				res.setHeader('Content-Type', 'application/json');
-				console.log(err);
 				res.json({ err: err });
-			}
-			// if not, create it
-			else {
-				passport.authenticate('local')(req, res, () => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json({ success: true, status: 'Registration Successful!' });
+			} else {
+				// add first name to the user after it's been created in the database
+				if (req.body.firstName) {
+					user.firstName = req.body.firstName;
+				}
+				// add last name to the user after it's been created in the database
+				if (req.body.lastName) {
+					user.lastName = req.body.lastName;
+				}
+				// save user with new fields
+				user.save((err, user) => {
+					if (err) {
+						// send error back to the client
+						res.statusCode = 500;
+						res.setHeader('Content-Type', 'application/json');
+						console.log(err);
+						res.json({ err: err });
+						return;
+					}
+					passport.authenticate('local')(req, res, () => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json({ success: true, status: 'Registration Successful!' });
+					});
 				});
 			}
 		}
